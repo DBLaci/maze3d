@@ -1,0 +1,19 @@
+{
+  "name": "maze3d",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multiplayer browser-based 3D maze game.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n shared,server,client -c cyan,green,magenta \"npm run dev -w @maze3d/shared\" \"npm run dev -w @maze3d/server\" \"npm run dev -w @maze3d/client\"",
+    "build": "npm run build -w @maze3d/shared && npm run build -w @maze3d/client && npm run build -w @maze3d/server",
+    "start": "npm run start -w @maze3d/server",
+    "typecheck": "npm run typecheck -w @maze3d/shared && npm run typecheck -w @maze3d/client && npm run typecheck -w @maze3d/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "typescript": "^5.6.3"
+  }
+}
