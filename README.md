@@ -1,6 +1,6 @@
 # Maze3D
 
-Maze3D is a multiplayer browser game where players explore generated 3D mazes through a fixed, non-rotating view. The game runs with a TypeScript Node.js server, an Express HTTP app, a `ws` WebSocket game channel, and a Vite + Three.js browser client.
+Maze3D is a multiplayer browser game where players explore generated 3D mazes through a fixed, non-rotating 2D perspective view. The game runs with a TypeScript Node.js server, an Express HTTP app, a `ws` WebSocket game channel, and a Vite browser client.
 
 ## Game rules
 
@@ -24,7 +24,7 @@ Maze3D is a multiplayer browser game where players explore generated 3D mazes th
 .
 ├── packages/shared  Shared TypeScript message and game-state types
 ├── packages/server  Express + ws server and in-memory maze state
-├── packages/client  Vite + Three.js browser client
+├── packages/client  Vite browser client
 ├── Dockerfile       Production container build
 └── docker-compose.yml
 ```
@@ -150,4 +150,4 @@ The exact TypeScript message contracts are defined in `packages/shared/src/index
 - State is intentionally in-memory only.
 - There is no authentication; display names are user-provided.
 - Maze generation happens once on server startup.
-- The client uses a stylized Three.js current-cell view rather than a full free-camera maze explorer, matching the rule that players cannot rotate or look around.
+- The client uses a stylized fixed 2D perspective current-cell view rather than a free-camera maze explorer, matching the rule that players cannot rotate or look around.

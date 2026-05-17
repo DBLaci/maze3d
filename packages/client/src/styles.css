@@ -13,7 +13,7 @@ input { width: 100%; border: 1px solid #33425f; border-radius: 10px; padding: 0.
 
 .shell { width: min(1180px, calc(100vw - 2rem)); margin: 0 auto; padding: 2rem 0; display: grid; gap: 1rem; }
 .lobby { min-height: 100vh; align-content: center; grid-template-columns: 1fr 1fr; }
-.game { grid-template-columns: minmax(0, 1fr) 380px; }
+.game { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
 .panel { border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 1.4rem; background: rgba(12, 19, 36, 0.82); box-shadow: 0 24px 70px rgba(0,0,0,0.35); backdrop-filter: blur(16px); }
 .hero h1 { margin: 0; font-size: clamp(3rem, 7vw, 6rem); }
 .eyebrow { color: #8bb7ff; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 900; }
@@ -24,15 +24,19 @@ input { width: 100%; border: 1px solid #33425f; border-radius: 10px; padding: 0.
 .maze-card { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.7rem; align-items: center; border: 1px solid #33425f; border-radius: 16px; padding: 1rem; background: #10182a; }
 .maze-card.selected { border-color: #8bb7ff; background: #142344; }
 .topline { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.player-header { display: flex; align-items: center; gap: 0.8rem; }
+.help-text { margin: 0 0 1rem; color: #b7c7e8; line-height: 1.45; }
 .maze-view { width: 100%; height: min(66vh, 620px); min-height: 420px; border: 1px solid #22314d; border-radius: 20px; overflow: hidden; background: linear-gradient(#081120, #10182a); }
-.fallback-view { --wear: 0; display: grid; place-items: center; gap: 1rem; width: 100%; height: 100%; padding: 1.5rem; text-align: center; background: radial-gradient(circle, rgba(139,183,255,0.18), rgba(255,120,80,calc(var(--wear) * 0.28)) 45%, transparent 72%); }
-.fallback-compass { display: grid; grid-template: repeat(3, 1fr) / repeat(5, 1fr); gap: 0.75rem; width: min(680px, 100%); min-height: 330px; perspective: 700px; }
+.fallback-view { --wear: 0; position: relative; display: grid; place-items: center; gap: 1rem; width: 100%; height: 100%; padding: 1.5rem; text-align: center; background: radial-gradient(circle, rgba(139,183,255,0.18), rgba(255,120,80,calc(var(--wear) * 0.28)) 45%, transparent 72%); }
+.fallback-scratches { position: absolute; inset: 0; pointer-events: none; opacity: calc(0.2 + var(--wear) * 0.7); }
+.fallback-scratches span { position: absolute; left: var(--x); top: var(--y); width: 46px; height: 2px; border-radius: 999px; background: rgba(241,194,125,0.72); transform: rotate(var(--r)); }
+.fallback-compass { display: grid; grid-template: repeat(3, 1fr) / repeat(5, 1fr); gap: 0.75rem; width: min(680px, 100%); min-height: 330px; perspective: 700px; z-index: 1; }
 .fallback-arrow { display: grid; place-items: center; align-content: center; gap: 0.25rem; border: 1px solid #33425f; border-radius: 18px; padding: 0.8rem; background: rgba(16,24,42,0.82); color: #66789d; font-weight: 900; }
 .fallback-arrow span { font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1; }
 .fallback-arrow small { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .fallback-arrow.open { border-color: #8cffc1; color: #dfffee; background: rgba(32,92,70,0.72); box-shadow: 0 0 28px rgba(140,255,193,0.18); }
-.fallback-arrow.up { grid-area: 1 / 2 / 2 / 3; }
-.fallback-arrow.down { grid-area: 3 / 2 / 4 / 3; }
+.fallback-arrow.up { grid-area: 3 / 2 / 4 / 3; }
+.fallback-arrow.down { grid-area: 1 / 2 / 2 / 3; }
 .fallback-arrow.left { grid-area: 2 / 1 / 3 / 2; }
 .fallback-arrow.right { grid-area: 2 / 3 / 3 / 4; }
 .fallback-arrow.forward { grid-area: 1 / 3 / 2 / 4; transform: rotateX(24deg) rotateZ(45deg); }
@@ -40,6 +44,8 @@ input { width: 100%; border: 1px solid #33425f; border-radius: 10px; padding: 0.
 .fallback-center { display: grid; gap: 0.25rem; border: 1px solid #8bb7ff; border-radius: 20px; padding: 1rem 1.4rem; background: #142344; }
 .fallback-center { grid-area: 2 / 2 / 3 / 3; align-self: stretch; place-items: center; }
 .fallback-center.exit { border-color: #8cff9a; background: #15371f; }
+.fallback-players { display: flex; justify-content: center; gap: 0.3rem; min-height: 1rem; }
+.fallback-players span { width: 0.9rem; height: 0.9rem; border: 2px solid rgba(255,255,255,0.74); border-radius: 999px; background: var(--player-color); box-shadow: 0 0 14px var(--player-color); }
 .directions { display: grid; grid-template: repeat(3, auto) / repeat(5, 1fr); gap: 0.7rem; }
 .direction[data-direction="up"] { grid-area: 1 / 2 / 2 / 3; }
 .direction[data-direction="down"] { grid-area: 3 / 2 / 4 / 3; }
@@ -52,10 +58,33 @@ input { width: 100%; border: 1px solid #33425f; border-radius: 10px; padding: 0.
 .stats { display: grid; grid-template-columns: 1fr auto; gap: 0.45rem 1rem; margin: 0; }
 .stats dt { color: #9fb1d1; }
 .stats dd { margin: 0; font-weight: 900; }
+.mini-map { width: 190px; max-width: 100%; height: auto; margin: 0.15rem 0 0.35rem; overflow: visible; }
+.mini-lines line { stroke: rgba(183,199,232,0.55); stroke-width: 1; }
+.mini-current line { stroke: #8cff9a; stroke-width: 3; filter: drop-shadow(0 0 4px #8cff9a); }
+.mini-points circle { fill: rgba(238,243,255,0.72); }
 .list { margin: 0; padding-left: 1.1rem; color: #d7e2ff; }
 .list li { margin: 0.35rem 0; }
 
 @media (max-width: 900px) {
   .lobby, .game { grid-template-columns: 1fr; }
   .maze-view { min-height: 330px; height: 50vh; }
+}
+
+@media (max-width: 560px) {
+  .shell { width: min(100vw - 0.75rem, 1180px); padding: 0.4rem 0; gap: 0.55rem; }
+  .panel { border-radius: 16px; padding: 0.8rem; }
+  .topline { align-items: flex-start; flex-direction: column; gap: 0.6rem; }
+  .player-header { width: 100%; justify-content: space-between; }
+  .help-text { font-size: 0.88rem; }
+  .maze-view { min-height: 310px; height: 42vh; }
+  .fallback-view { padding: 0.7rem; gap: 0.45rem; }
+  .fallback-compass { gap: 0.4rem; min-height: 250px; }
+  .fallback-arrow { min-width: 0; border-radius: 13px; padding: 0.45rem 0.25rem; }
+  .fallback-arrow span { font-size: 2rem; }
+  .fallback-arrow small { font-size: 0.58rem; letter-spacing: 0.02em; }
+  .fallback-center { border-radius: 14px; padding: 0.5rem; font-size: 0.78rem; }
+  .directions { gap: 0.45rem; }
+  .mini-map { width: 150px; }
+  button { padding: 0.7rem 0.5rem; border-radius: 10px; }
+  .actions { grid-template-columns: 1fr; }
 }
