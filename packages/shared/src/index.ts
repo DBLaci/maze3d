@@ -33,6 +33,7 @@ export interface PlayerPublicState {
   name: string;
   color: string;
   position: Vector3;
+  positionHistory: Vector3[];
   joinedAt: string;
   traveledDistance: number;
 }
@@ -41,6 +42,7 @@ export interface CellViewState {
   position: Vector3;
   visitCount: number;
   availableDirections: Direction[];
+  backtrackDirection: Direction | null;
   isExit: boolean;
   crumbs: CrumbState[];
 }

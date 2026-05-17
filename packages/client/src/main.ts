@@ -1,11 +1,12 @@
 import type { ClientMessage, Direction, GameState, MazeSummary, ServerMessage } from "@maze3d/shared";
+import { renderLatticeMap } from "./components/latticeMap";
 import "./styles.css";
 
 const directionLabels: Record<Direction, string> = {
   left: "← Bal",
   right: "Jobb →",
-  up: "PgUp Föl",
-  down: "PgDn Le",
+  up: "⇞ Föl",
+  down: "⇟ Le",
   forward: "↑ Előre Z+",
   backward: "↓ Hátra Z-"
 };
@@ -35,6 +36,7 @@ let mazes: MazeSummary[] = [];
 let state: GameState | null = null;
 let selectedMazeId = "";
 let lastNotice = "Connecting...";
+let discoveredExit: GameState["maze"]["exit"] | null = null;
 const preferredNameKey = "maze3d.preferredName";
 
 const appElement = requireElement<HTMLDivElement>("#app");
@@ -75,6 +77,10 @@ function handleServerMessage(message: ServerMessage): void {
     case "stateUpdate":
       state = message.state;
       lastNotice = message.type === "joined" ? "Joined maze." : lastNotice;
+      if (message.state.cell.isExit && !discoveredExit) {
+        discoveredExit = message.state.maze.exit;
+        lastNotice = "Exit discovered! From now on, your map shows it in red.";
+      }
       break;
     case "playerJoined":
       lastNotice = `${message.player.name} joined.`;
@@ -146,6 +152,7 @@ function gameTemplate(game: GameState): string {
           <div class="player-header"><strong style="color:${game.self.color}">${escapeHtml(game.self.name)}</strong><button id="leave">Leave</button></div>
         </div>
         <p class="help-text">Goal: find the only exit. Move with buttons or keyboard arrows; PageUp/PageDown move vertically, Space places or picks up your own crumb.</p>
+        ${discoveredExit ? `<div class="exit-banner">Exit discovered at ${discoveredExit.x}, ${discoveredExit.y}, ${discoveredExit.z}. It is marked red on your map.</div>` : ""}
         <div id="maze-view" class="maze-view"></div>
         <p class="notice ${game.cell.isExit ? "success" : ""}">${escapeHtml(game.cell.isExit ? "You found the exit!" : lastNotice)}</p>
       </section>
@@ -153,7 +160,7 @@ function gameTemplate(game: GameState): string {
         <h2>Available directions</h2>
         <div class="directions">
           ${controlLayout.map((direction) => `
-            <button class="direction" data-direction="${direction}" ${game.cell.availableDirections.includes(direction) ? "" : "disabled"}>${directionLabels[direction]}</button>
+            <button class="direction ${game.cell.backtrackDirection === direction ? "backtrack" : ""}" data-direction="${direction}" ${game.cell.availableDirections.includes(direction) ? "" : "disabled"}>${directionLabels[direction]}</button>
           `).join("")}
         </div>
         <div class="actions">
@@ -204,7 +211,7 @@ function perspectiveViewTemplate(game: GameState): string {
 
 function fallbackDirection(game: GameState, direction: Direction): string {
   return `
-    <div class="fallback-arrow ${direction} ${game.cell.availableDirections.includes(direction) ? "open" : "closed"}">
+    <div class="fallback-arrow ${direction} ${game.cell.availableDirections.includes(direction) ? "open" : "closed"} ${game.cell.backtrackDirection === direction ? "backtrack" : ""}">
       <span>${fallbackArrows[direction]}</span>
       <small>${directionLabels[direction]}</small>
     </div>
@@ -212,62 +219,7 @@ function fallbackDirection(game: GameState, direction: Direction): string {
 }
 
 function miniMapTemplate(game: GameState): string {
-  const cell = 22;
-  const margin = 36;
-  const xAxis = { x: 17, y: 10 };
-  const yAxis = { x: 18, y: -13 };
-  const zAxis = { x: 17, y: -10 };
-  const points = new Map<string, { x: number; y: number }>();
-  for (let x = 0; x <= game.maze.dimensions.x; x += 1) {
-    for (let y = 0; y <= game.maze.dimensions.y; y += 1) {
-      for (let z = 0; z <= game.maze.dimensions.z; z += 1) {
-        points.set(`${x},${y},${z}`, projectMiniPoint(x, y, z, cell, margin, xAxis, yAxis, zAxis));
-      }
-    }
-  }
-  const lines: string[] = [];
-  for (let x = 0; x <= game.maze.dimensions.x; x += 1) {
-    for (let y = 0; y <= game.maze.dimensions.y; y += 1) {
-      for (let z = 0; z <= game.maze.dimensions.z; z += 1) {
-        if (x < game.maze.dimensions.x) lines.push(miniLine(points, x, y, z, x + 1, y, z));
-        if (y < game.maze.dimensions.y) lines.push(miniLine(points, x, y, z, x, y + 1, z));
-        if (z < game.maze.dimensions.z) lines.push(miniLine(points, x, y, z, x, y, z + 1));
-      }
-    }
-  }
-  const sx = game.self.position.x;
-  const sy = game.self.position.y;
-  const sz = game.self.position.z;
-  const cubeEdges = [
-    [sx, sy, sz, sx + 1, sy, sz], [sx, sy, sz, sx, sy + 1, sz], [sx, sy, sz, sx, sy, sz + 1],
-    [sx + 1, sy + 1, sz + 1, sx, sy + 1, sz + 1], [sx + 1, sy + 1, sz + 1, sx + 1, sy, sz + 1], [sx + 1, sy + 1, sz + 1, sx + 1, sy + 1, sz],
-    [sx + 1, sy, sz, sx + 1, sy + 1, sz], [sx + 1, sy, sz, sx + 1, sy, sz + 1],
-    [sx, sy + 1, sz, sx + 1, sy + 1, sz], [sx, sy + 1, sz, sx, sy + 1, sz + 1],
-    [sx, sy, sz + 1, sx + 1, sy, sz + 1], [sx, sy, sz + 1, sx, sy + 1, sz + 1]
-  ];
-  const width = margin * 2 + (game.maze.dimensions.x + game.maze.dimensions.y + game.maze.dimensions.z) * cell;
-  const height = margin * 2 + (game.maze.dimensions.y + game.maze.dimensions.z) * cell;
-  return `
-    <svg class="mini-map" viewBox="0 0 ${width} ${height}" role="img" aria-label="3D maze position grid">
-      <g class="mini-lines">${lines.join("")}</g>
-      <g class="mini-current">${cubeEdges.map(([x1, y1, z1, x2, y2, z2]) => miniLine(points, x1, y1, z1, x2, y2, z2)).join("")}</g>
-      <g class="mini-points">${[...points.values()].map((point) => `<circle cx="${point.x}" cy="${point.y}" r="1.5" />`).join("")}</g>
-    </svg>
-  `;
-}
-
-function projectMiniPoint(x: number, y: number, z: number, cell: number, margin: number, xAxis: { x: number; y: number }, yAxis: { x: number; y: number }, zAxis: { x: number; y: number }): { x: number; y: number } {
-  return {
-    x: margin + x * xAxis.x + y * yAxis.x + z * zAxis.x + 80,
-    y: margin + x * xAxis.y + y * yAxis.y + z * zAxis.y + 40
-  };
-}
-
-function miniLine(points: Map<string, { x: number; y: number }>, x1: number, y1: number, z1: number, x2: number, y2: number, z2: number): string {
-  const a = points.get(`${x1},${y1},${z1}`);
-  const b = points.get(`${x2},${y2},${z2}`);
-  if (!a || !b) return "";
-  return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" />`;
+  return renderLatticeMap({ dimensions: game.maze.dimensions, selected: game.self.positionHistory, revealedExit: discoveredExit });
 }
 
 function bindEvents(): void {
@@ -291,6 +243,7 @@ function bindEvents(): void {
   document.querySelector<HTMLButtonElement>("#leave")?.addEventListener("click", () => {
     socket.close();
     state = null;
+    discoveredExit = null;
     render();
   });
 }

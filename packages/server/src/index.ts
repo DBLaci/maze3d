@@ -30,6 +30,8 @@ interface Player {
   name: string;
   color: string;
   position: Vector3;
+  positionHistory: Vector3[];
+  lastMoveDirection: Direction | null;
   joinedAt: string;
   traveledDistance: number;
   socket: WebSocket;
@@ -191,6 +193,8 @@ function joinMaze(socket: WebSocket, mazeId: string, rawName: string, rawColor: 
     name: sanitizeName(rawName),
     color: sanitizeColor(rawColor),
     position: randomSpawn(maze),
+    positionHistory: [],
+    lastMoveDirection: null,
     joinedAt: new Date().toISOString(),
     traveledDistance: 0,
     socket,
@@ -199,6 +203,7 @@ function joinMaze(socket: WebSocket, mazeId: string, rawName: string, rawColor: 
 
   maze.players.set(player.id, player);
   socketPlayers.set(socket, player);
+  player.positionHistory = [{ ...player.position }];
   cell(maze.cells, player.position).visitCount += 1;
 
   send(socket, { type: "joined", playerId: player.id, state: buildGameState(maze, player) });
@@ -223,6 +228,8 @@ function movePlayer(socket: WebSocket, direction: Direction): void {
   }
 
   player.position = add(player.position, DIRECTION_DELTAS[direction]);
+  player.positionHistory = [{ ...player.position }, ...player.positionHistory].slice(0, 10);
+  player.lastMoveDirection = direction;
   player.traveledDistance += 1;
   cell(maze.cells, player.position).visitCount += 1;
   broadcastStates(maze);
@@ -313,6 +320,7 @@ function buildGameState(maze: Maze, self: Player): GameState {
       position: self.position,
       visitCount: currentCell.visitCount,
       availableDirections: [...currentCell.open],
+      backtrackDirection: self.lastMoveDirection ? OPPOSITE_DIRECTION[self.lastMoveDirection] : null,
       isExit: samePosition(self.position, maze.exit),
       crumbs: crumbs.filter((crumb) => samePosition(crumb.position, self.position))
     },
@@ -360,6 +368,7 @@ function publicPlayer(player: Player): PlayerPublicState {
     name: player.name,
     color: player.color,
     position: player.position,
+    positionHistory: player.positionHistory,
     joinedAt: player.joinedAt,
     traveledDistance: player.traveledDistance
   };

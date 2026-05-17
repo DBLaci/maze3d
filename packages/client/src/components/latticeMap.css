@@ -1,0 +1,9 @@
+.lattice-map { width: 190px; max-width: 100%; height: auto; margin: 0.15rem 0 0.35rem; overflow: visible; }
+.lattice-map__lines line { stroke: rgba(183,199,232,0.55); stroke-width: 1; }
+.lattice-map__selected line { stroke: rgba(140,255,154,var(--selection-strength)); stroke-width: calc(1px + var(--selection-strength) * 2px); filter: drop-shadow(0 0 calc(var(--selection-strength) * 4px) #8cff9a); }
+.lattice-map__exit line { stroke: #ff4b5f; stroke-width: 3; filter: drop-shadow(0 0 5px #ff4b5f); }
+.lattice-map__points circle { fill: rgba(238,243,255,0.72); }
+
+@media (max-width: 560px) {
+  .lattice-map { width: 150px; }
+}

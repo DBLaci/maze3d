@@ -12,6 +12,12 @@ export default defineConfig({
     }
   },
   build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        lattice: "lattice.html"
+      }
+    },
     outDir: "dist",
     emptyOutDir: true
   }
